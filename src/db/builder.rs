@@ -9,6 +9,7 @@ use crate::errors::Error;
 pub(super) struct Options {
     pub(super) no_grow_sync: bool,
     pub(super) read_only: bool,
+    pub(super) ignore_flock: bool,
     pub(super) initial_mmap_size: usize,
     pub(super) autoremove: bool,
     pub(super) checkmode: CheckMode,
@@ -30,6 +31,7 @@ pub struct DBBuilder {
     path: PathBuf,
     no_grow_sync: bool,
     read_only: bool,
+    ignore_flock: bool,
     initial_mmap_size: usize,
     autoremove: bool,
     checkmode: CheckMode,
@@ -46,6 +48,7 @@ impl DBBuilder {
             path: path.as_ref().to_owned(),
             no_grow_sync: false,
             read_only: false,
+            ignore_flock: false,
             initial_mmap_size: 0,
             autoremove: false,
             checkmode: CheckMode::NO,
@@ -77,6 +80,18 @@ impl DBBuilder {
     /// Default: false
     pub fn read_only(mut self, v: bool) -> Self {
         self.read_only = v;
+        self
+    }
+
+    /// Open database by ignoring the advisory lock
+    ///
+    /// If the database is opened like so then data could be corrupted when the writer do write to
+    /// it. However because some process might hold a exclusive lock the whole time, it might be
+    /// a good idea to ignore it.
+    ///
+    /// Default: false
+    pub fn ignore_flock(mut self, v: bool) -> Self {
+        self.ignore_flock = v;
         self
     }
 
@@ -145,6 +160,7 @@ impl DBBuilder {
         let options = Options {
             no_grow_sync: self.no_grow_sync,
             read_only: self.read_only,
+            ignore_flock: self.ignore_flock,
             initial_mmap_size: self.initial_mmap_size,
             autoremove: self.autoremove,
             checkmode: self.checkmode,
